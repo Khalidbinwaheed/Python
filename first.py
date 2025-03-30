@@ -1,1 +1,6 @@
 print("Enter ur name ")
+print("Enter ur name ")
+print("Enter ur name ")
+print("Enter ur name ")
+print("Enter ur name ")
+print("Enter ur name ")
