@@ -5,7 +5,7 @@ import json
 import os
 
 # --- Data Persistence Logic (same as before) ---
-TASKS_FILE = "tasks_ttk.json" # Use a different file name
+TASKS_FILE = "tasks_amazing.json" # Use a different file name
 
 def load_tasks():
     """Loads tasks from the JSON file."""
@@ -44,29 +44,50 @@ def save_tasks(tasks):
 class TodoApp:
     def __init__(self, root_window):
         self.root = root_window
-        self.root.title("Enhanced To-Do App")
+        self.root.title("Amazing To-Do App")
         # Set a minimum size and allow resizing
-        self.root.minsize(450, 400)
+        self.root.minsize(500, 450)
         # Configure the main window's grid behavior
         self.root.columnconfigure(0, weight=1) # Make column 0 expandable
         self.root.rowconfigure(1, weight=1)    # Make row 1 (listbox frame) expandable
 
-        # --- Style Configuration (Optional but recommended) ---
+        # --- Style Configuration (Customization) ---
         self.style = ttk.Style()
-        # You can experiment with themes: 'clam', 'alt', 'default', 'classic'
         # Available themes depend on OS and Tk version
         # print(self.style.theme_names()) # See available themes
         try:
             self.style.theme_use('clam') # 'clam' often looks decent
         except tk.TclError:
             print("Clam theme not available, using default.")
-        # Configure specific styles if needed
-        # self.style.configure('TButton', padding=5, font=('Segoe UI', 10))
-        # self.style.configure('TEntry', padding=5, font=('Segoe UI', 10))
+
+        # Define color palette
+        self.bg_color = "#f0f0f0"  # Light background
+        self.fg_color = "black"      # Default text color
+        self.highlight_color = "#0078D7" # Selection/Highlight Color
+        self.button_bg = "#4CAF50"     # Green buttons
+        self.button_fg = "white"      # White button text
+        self.completed_color = "gray"    # Color for completed tasks
+        self.delete_color = "#f44336"   # Red for delete button
+
+        # Configure styles for widgets.
+        self.style.configure('TFrame', background=self.bg_color)  # Frame background
+        self.style.configure('TButton', background=self.button_bg, foreground=self.button_fg,
+                             relief="flat", font=('Segoe UI', 10))
+        self.style.map('TButton',
+            background=[('active', self.button_bg)], # Change button on hover
+            foreground=[('active', self.button_fg)]
+        ) # Add a bit more contrast on active
+
+        self.style.configure('TEntry', fieldbackground="white", foreground=self.fg_color,
+                             font=('Segoe UI', 10), borderwidth=0)  # More modern look, remove border
+        self.style.configure('TLabel', background=self.bg_color, foreground=self.fg_color,
+                             font=('Segoe UI', 9))
+        self.style.configure('Vertical.TScrollbar', background=self.bg_color, arrowcolor=self.fg_color, troughcolor="#d3d3d3")  # Scrollbar style
+
 
         # Define fonts
-        self.default_font = tkFont.Font(family="Segoe UI", size=10)
-        self.strikethrough_font = tkFont.Font(family="Segoe UI", size=10, overstrike=True)
+        self.default_font = tkFont.Font(family="Segoe UI", size=11)
+        self.strikethrough_font = tkFont.Font(family="Segoe UI", size=11, overstrike=True)
 
 
         # --- Data ---
@@ -74,12 +95,17 @@ class TodoApp:
 
         # --- UI Elements ---
 
+        # Main Container Frame
+        self.main_frame = ttk.Frame(self.root, padding=10, style='TFrame')  # Use the custom frame style
+        self.main_frame.grid(row=0, column=0, sticky="nsew")
+
+
         # Input Frame (using grid)
-        self.input_frame = ttk.Frame(self.root, padding="10 10 10 5") # L,T,R,B padding
-        self.input_frame.grid(row=0, column=0, sticky="ew") # ew = stretch horizontally
+        self.input_frame = ttk.Frame(self.main_frame, padding="10 10 10 10", style='TFrame')
+        self.input_frame.grid(row=0, column=0, sticky="ew")
         self.input_frame.columnconfigure(0, weight=1) # Make entry expand
 
-        self.task_entry = ttk.Entry(self.input_frame, width=40, font=self.default_font)
+        self.task_entry = ttk.Entry(self.input_frame, width=40, font=self.default_font, style='TEntry')
         self.task_entry.grid(row=0, column=0, sticky="ew", padx=(0, 5)) # Pad right
         self.task_entry.bind("<Return>", self.add_task_event)
 
@@ -88,7 +114,7 @@ class TodoApp:
 
 
         # List Frame (using grid)
-        self.list_frame = ttk.Frame(self.root, padding="10 0 10 5")
+        self.list_frame = ttk.Frame(self.main_frame, padding="0 0 10 0", style='TFrame')  # Less padding at top
         self.list_frame.grid(row=1, column=0, sticky="nsew") # nsew = stretch all directions
         self.list_frame.columnconfigure(0, weight=1) # Listbox column expands
         self.list_frame.rowconfigure(0, weight=1)    # Listbox row expands
@@ -99,11 +125,12 @@ class TodoApp:
             # width=50, # Width is less important when using grid expansion
             # height=15, # Height less important with grid expansion
             font=self.default_font,
-            selectbackground="#0078D7", # A more modern selection color
+            selectbackground=self.highlight_color, # Use the highlight color
             selectforeground="white",
             borderwidth=0, # Use frame border if needed
-            highlightthickness=0 # Remove focus border if desired
-            # activestyle='none' # Removes the dotted box on selection (can reduce clarity)
+            highlightthickness=0, # Remove focus border if desired
+            background="white",  # Explicitly set listbox background
+            foreground=self.fg_color
         )
         self.task_listbox.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
         self.task_listbox.bind("<Double-Button-1>", self.toggle_complete_event) # Double click binding
@@ -118,7 +145,7 @@ class TodoApp:
 
 
         # Action Frame (using grid)
-        self.action_frame = ttk.Frame(self.root, padding="10 5 10 10")
+        self.action_frame = ttk.Frame(self.main_frame, padding="10 5 10 5", style='TFrame')
         self.action_frame.grid(row=2, column=0, sticky="ew")
         # Center buttons within the action frame
         self.action_frame.columnconfigure(0, weight=1)
@@ -128,11 +155,13 @@ class TodoApp:
         self.toggle_button = ttk.Button(self.action_frame, text="Toggle Complete", command=self.toggle_complete)
         self.toggle_button.grid(row=0, column=0, padx=5, sticky="e") # Align right-ish
 
-        self.delete_button = ttk.Button(self.action_frame, text="Delete Task", command=self.delete_task)
+        self.delete_button = ttk.Button(self.action_frame, text="Delete Task", command=self.delete_task, style='TButton')  # Use same style, change on specific
+        self.delete_button.config(style=f'TButton.{self.delete_color}') # Apply delete color specifically.
+
         self.delete_button.grid(row=0, column=1, padx=5, sticky="w") # Align left-ish
 
         # Status Bar
-        self.status_bar = Label(self.root, text="Ready", bd=1, relief=tk.SUNKEN, anchor=tk.W, font=("Segoe UI", 8))
+        self.status_bar = ttk.Label(self.root, text="Ready", bd=1, relief=tk.SUNKEN, anchor=tk.W, font=("Segoe UI", 9), style='TLabel')
         self.status_bar.grid(row=3, column=0, sticky="ew")
 
 
@@ -173,11 +202,9 @@ class TodoApp:
 
             # Apply styling for completed tasks
             if task['completed']:
-                self.task_listbox.itemconfig(index, {'fg': 'gray'})
-                self.task_listbox.itemconfig(index, {'font': self.strikethrough_font})
+                self.task_listbox.itemconfig(index, {'fg': self.completed_color, 'font': self.strikethrough_font})
             else:
-                 self.task_listbox.itemconfig(index, {'fg': 'black'})
-                 self.task_listbox.itemconfig(index, {'font': self.default_font})
+                 self.task_listbox.itemconfig(index, {'fg': self.fg_color, 'font': self.default_font})
 
         # Re-select the previously selected item if it still exists
         if current_selection is not None and current_selection < self.task_listbox.size():
