@@ -1,11 +1,11 @@
 import tkinter as tk
-from tkinter import ttk  # Import themed widgets
-from tkinter import messagebox, Listbox, Scrollbar, Frame, Label, font as tkFont
+from tkinter import ttk
+from tkinter import messagebox, Listbox, Scrollbar, Frame, Label, Entry, Button, font as tkFont, Toplevel
 import json
 import os
 
-# --- Data Persistence Logic (same as before) ---
-TASKS_FILE = "tasks_amazing.json" # Use a different file name
+# --- Data Persistence Logic ---
+TASKS_FILE = "tasks_amazing_ttk.json"
 
 def load_tasks():
     """Loads tasks from the JSON file."""
@@ -17,13 +17,22 @@ def load_tasks():
             if not isinstance(tasks, list):
                 messagebox.showwarning("Load Warning", "Task file format incorrect. Starting fresh.")
                 return []
-            # Basic validation of task structure
+            # Validate and add default fields for older data if necessary
             valid_tasks = []
             for task in tasks:
-                if isinstance(task, dict) and 'description' in task and 'completed' in task:
+                if isinstance(task, dict):
+                    # Ensure 'description' and 'completed' exist
+                    if 'description' not in task or 'completed' not in task:
+                         print(f"Warning: Skipping invalid task data: {task}") # Log invalid structure
+                         continue
+
+                    # Ensure 'priority' exists, add default if not
+                    if 'priority' not in task or task['priority'] not in ["High", "Medium", "Low", "None"]:
+                        task['priority'] = "None" # Default priority
+
                     valid_tasks.append(task)
                 else:
-                    print(f"Warning: Skipping invalid task data: {task}") # Log for debugging
+                    print(f"Warning: Skipping non-dict task data: {task}")
             return valid_tasks
     except json.JSONDecodeError:
         messagebox.showwarning("Load Warning", f"Could not decode JSON from {TASKS_FILE}. Starting fresh.")
@@ -40,54 +49,50 @@ def save_tasks(tasks):
     except Exception as e:
         messagebox.showerror("Save Error", f"Could not save tasks:\n{e}")
 
+# --- Constants for UI Colors and Styles ---
+COLOR_BG_MAIN = "#f0f0f0" # Light gray background
+COLOR_BG_FRAME = "#ffffff" # White background for inner frames
+COLOR_TEXT_DEFAULT = "black"
+COLOR_TEXT_COMPLETED = "gray"
+COLOR_TEXT_HIGH_PRIORITY = "#e53935" # Red-ish
+COLOR_TEXT_MEDIUM_PRIORITY = "#ffb300" # Orange-ish
+COLOR_TEXT_LOW_PRIORITY = "#43a047"  # Green-ish
+
+FONT_FAMILY = "Segoe UI" # Or "Arial", "Helvetica"
+FONT_SIZE_NORMAL = 10
+FONT_SIZE_STATUS = 9
+FONT_SIZE_TITLE = 12 # Slightly larger for title
+
+PRIORITY_OPTIONS = ["None", "Low", "Medium", "High"] # Order them for clarity
+
 # --- GUI Application Class ---
 class TodoApp:
     def __init__(self, root_window):
         self.root = root_window
         self.root.title("Amazing To-Do App")
-        # Set a minimum size and allow resizing
-        self.root.minsize(500, 450)
-        # Configure the main window's grid behavior
-        self.root.columnconfigure(0, weight=1) # Make column 0 expandable
-        self.root.rowconfigure(1, weight=1)    # Make row 1 (listbox frame) expandable
+        self.root.geometry("500x500") # Set initial size
+        self.root.minsize(400, 400) # Set minimum size
 
-        # --- Style Configuration (Customization) ---
+        # Configure the main window grid
+        self.root.columnconfigure(0, weight=1) # Main column expands
+        self.root.rowconfigure(2, weight=1)    # Listbox row expands
+
+        # --- Style Configuration ---
         self.style = ttk.Style()
-        # Available themes depend on OS and Tk version
-        # print(self.style.theme_names()) # See available themes
-        try:
-            self.style.theme_use('clam') # 'clam' often looks decent
-        except tk.TclError:
-            print("Clam theme not available, using default.")
+        # self.style.theme_use('clam') # Experiment with themes
 
-        # Define color palette
-        self.bg_color = "#f0f0f0"  # Light background
-        self.fg_color = "black"      # Default text color
-        self.highlight_color = "#0078D7" # Selection/Highlight Color
-        self.button_bg = "#4CAF50"     # Green buttons
-        self.button_fg = "white"      # White button text
-        self.completed_color = "gray"    # Color for completed tasks
-        self.delete_color = "#f44336"   # Red for delete button
-
-        # Configure styles for widgets.
-        self.style.configure('TFrame', background=self.bg_color)  # Frame background
-        self.style.configure('TButton', background=self.button_bg, foreground=self.button_fg,
-                             relief="flat", font=('Segoe UI', 10))
-        self.style.map('TButton',
-            background=[('active', self.button_bg)], # Change button on hover
-            foreground=[('active', self.button_fg)]
-        ) # Add a bit more contrast on active
-
-        self.style.configure('TEntry', fieldbackground="white", foreground=self.fg_color,
-                             font=('Segoe UI', 10), borderwidth=0)  # More modern look, remove border
-        self.style.configure('TLabel', background=self.bg_color, foreground=self.fg_color,
-                             font=('Segoe UI', 9))
-        self.style.configure('Vertical.TScrollbar', background=self.bg_color, arrowcolor=self.fg_color, troughcolor="#d3d3d3")  # Scrollbar style
+        # Custom styles (optional, can be tricky with themes)
+        # self.style.configure('TFrame', background=COLOR_BG_FRAME)
+        # self.style.configure('TButton', padding=5, font=(FONT_FAMILY, FONT_SIZE_NORMAL))
+        # self.style.configure('TEntry', padding=5, font=(FONT_FAMILY, FONT_SIZE_NORMAL))
+        # self.style.configure('TCombobox', padding=5, font=(FONT_FAMILY, FONT_SIZE_NORMAL))
 
 
         # Define fonts
-        self.default_font = tkFont.Font(family="Segoe UI", size=11)
-        self.strikethrough_font = tkFont.Font(family="Segoe UI", size=11, overstrike=True)
+        self.default_font = tkFont.Font(family=FONT_FAMILY, size=FONT_SIZE_NORMAL)
+        self.strikethrough_font = tkFont.Font(family=FONT_FAMILY, size=FONT_SIZE_NORMAL, overstrike=True)
+        self.status_font = tkFont.Font(family=FONT_FAMILY, size=FONT_SIZE_STATUS)
+        self.title_font = tkFont.Font(family=FONT_FAMILY, size=FONT_SIZE_TITLE, weight="bold")
 
 
         # --- Data ---
@@ -95,79 +100,99 @@ class TodoApp:
 
         # --- UI Elements ---
 
-        # Main Container Frame
-        self.main_frame = ttk.Frame(self.root, padding=10, style='TFrame')  # Use the custom frame style
-        self.main_frame.grid(row=0, column=0, sticky="nsew")
+        # Title Label
+        self.title_label = ttk.Label(self.root, text="Your Task List", font=self.title_font)
+        self.title_label.grid(row=0, column=0, pady=(10, 5), sticky="ew", padx=10)
+        self.title_label.config(anchor="center") # Center the text
 
+        # --- Input Frame ---
+        self.input_frame = ttk.Frame(self.root, padding="10 5 10 5", relief=tk.RIDGE) # Add ridge border
+        self.input_frame.grid(row=1, column=0, sticky="ew", padx=10)
+        self.input_frame.columnconfigure(0, weight=1) # Task entry expands
 
-        # Input Frame (using grid)
-        self.input_frame = ttk.Frame(self.main_frame, padding="10 10 10 10", style='TFrame')
-        self.input_frame.grid(row=0, column=0, sticky="ew")
-        self.input_frame.columnconfigure(0, weight=1) # Make entry expand
-
-        self.task_entry = ttk.Entry(self.input_frame, width=40, font=self.default_font, style='TEntry')
-        self.task_entry.grid(row=0, column=0, sticky="ew", padx=(0, 5)) # Pad right
+        self.task_entry = ttk.Entry(self.input_frame, width=30, font=self.default_font)
+        self.task_entry.grid(row=0, column=0, sticky="ew", padx=(0, 5), pady=5)
         self.task_entry.bind("<Return>", self.add_task_event)
 
+        self.priority_combobox = ttk.Combobox(
+            self.input_frame,
+            values=PRIORITY_OPTIONS,
+            state="readonly", # Prevent typing custom values
+            width=10,
+            font=self.default_font
+        )
+        self.priority_combobox.grid(row=0, column=1, padx=(0, 5), pady=5)
+        self.priority_combobox.set(PRIORITY_OPTIONS[0]) # Set default value
+
         self.add_button = ttk.Button(self.input_frame, text="Add Task", command=self.add_task)
-        self.add_button.grid(row=0, column=1)
+        self.add_button.grid(row=0, column=2, pady=5)
+
+        # Separator below input
+        self.sep1 = ttk.Separator(self.root, orient='horizontal')
+        self.sep1.grid(row=2, column=0, sticky="ew", padx=10, pady=5)
 
 
-        # List Frame (using grid)
-        self.list_frame = ttk.Frame(self.main_frame, padding="0 0 10 0", style='TFrame')  # Less padding at top
-        self.list_frame.grid(row=1, column=0, sticky="nsew") # nsew = stretch all directions
+        # --- List Frame ---
+        self.list_frame = ttk.Frame(self.root, padding="0 0 0 5") # Pad bottom within main grid
+        self.list_frame.grid(row=3, column=0, sticky="nsew", padx=10)
         self.list_frame.columnconfigure(0, weight=1) # Listbox column expands
         self.list_frame.rowconfigure(0, weight=1)    # Listbox row expands
 
-        # Use standard tk Listbox as ttk doesn't have one, but style its container/scrollbar
+
+        # Use standard tk Listbox as ttk doesn't have itemconfig for color/font easily
         self.task_listbox = Listbox(
             self.list_frame,
-            # width=50, # Width is less important when using grid expansion
-            # height=15, # Height less important with grid expansion
             font=self.default_font,
-            selectbackground=self.highlight_color, # Use the highlight color
+            selectbackground="#0078D7", # More modern selection color
             selectforeground="white",
-            borderwidth=0, # Use frame border if needed
-            highlightthickness=0, # Remove focus border if desired
-            background="white",  # Explicitly set listbox background
-            foreground=self.fg_color
+            borderwidth=0,
+            highlightthickness=0,
+            relief=tk.FLAT # Use flat relief
         )
         self.task_listbox.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
-        self.task_listbox.bind("<Double-Button-1>", self.toggle_complete_event) # Double click binding
+        self.task_listbox.bind("<Double-Button-1>", self.toggle_complete_event) # Double click to toggle
 
         self.scrollbar = ttk.Scrollbar(
             self.list_frame,
             orient=tk.VERTICAL,
             command=self.task_listbox.yview
         )
-        self.scrollbar.grid(row=0, column=1, sticky="ns") # ns = stretch vertically
+        self.scrollbar.grid(row=0, column=1, sticky="ns")
         self.task_listbox.config(yscrollcommand=self.scrollbar.set)
 
 
-        # Action Frame (using grid)
-        self.action_frame = ttk.Frame(self.main_frame, padding="10 5 10 5", style='TFrame')
-        self.action_frame.grid(row=2, column=0, sticky="ew")
-        # Center buttons within the action frame
-        self.action_frame.columnconfigure(0, weight=1)
-        self.action_frame.columnconfigure(1, weight=1)
-        self.action_frame.columnconfigure(2, weight=1) # Add spacer columns if needed
+        # Separator below listbox
+        self.sep2 = ttk.Separator(self.root, orient='horizontal')
+        self.sep2.grid(row=4, column=0, sticky="ew", padx=10, pady=5)
+
+        # --- Action Frame ---
+        self.action_frame = ttk.Frame(self.root, padding="10 5 10 5")
+        self.action_frame.grid(row=5, column=0, sticky="ew", padx=10)
+        # Center buttons
+        self.action_frame.columnconfigure(0, weight=1) # Spacer
+        self.action_frame.columnconfigure(1, weight=0) # Button column
+        self.action_frame.columnconfigure(2, weight=0) # Button column
+        self.action_frame.columnconfigure(3, weight=0) # Button column
+        self.action_frame.columnconfigure(4, weight=1) # Spacer
+
 
         self.toggle_button = ttk.Button(self.action_frame, text="Toggle Complete", command=self.toggle_complete)
-        self.toggle_button.grid(row=0, column=0, padx=5, sticky="e") # Align right-ish
+        self.toggle_button.grid(row=0, column=1, padx=5)
 
-        self.delete_button = ttk.Button(self.action_frame, text="Delete Task", command=self.delete_task, style='TButton')  # Use same style, change on specific
-        self.delete_button.config(style=f'TButton.{self.delete_color}') # Apply delete color specifically.
+        self.edit_button = ttk.Button(self.action_frame, text="Edit Task", command=self.edit_task)
+        self.edit_button.grid(row=0, column=2, padx=5)
 
-        self.delete_button.grid(row=0, column=1, padx=5, sticky="w") # Align left-ish
+        self.delete_button = ttk.Button(self.action_frame, text="Delete Task", command=self.delete_task)
+        self.delete_button.grid(row=0, column=3, padx=5)
 
         # Status Bar
-        self.status_bar = ttk.Label(self.root, text="Ready", bd=1, relief=tk.SUNKEN, anchor=tk.W, font=("Segoe UI", 9), style='TLabel')
-        self.status_bar.grid(row=3, column=0, sticky="ew")
+        self.status_bar = Label(self.root, text="Loading tasks...", bd=1, relief=tk.SUNKEN, anchor=tk.W, font=self.status_font)
+        self.status_bar.grid(row=6, column=0, sticky="ew")
 
 
         # --- Initial Population ---
         self.populate_listbox()
-        self.update_status(f"{len(self.tasks)} tasks loaded.")
+        self.update_status(f"Ready. {len(self.tasks)} tasks loaded.")
         if not self.tasks:
              self.update_status("No tasks yet. Add one!")
 
@@ -189,59 +214,88 @@ class TodoApp:
         """Updates the text in the status bar."""
         self.status_bar.config(text=message)
 
+    def update_button_states(self):
+        """Enable/disable action buttons based on selection"""
+        if self.get_selected_task_index() is None:
+             self.toggle_button.config(state=tk.DISABLED)
+             self.edit_button.config(state=tk.DISABLED)
+             self.delete_button.config(state=tk.DISABLED)
+        else:
+            self.toggle_button.config(state=tk.NORMAL)
+            self.edit_button.config(state=tk.NORMAL)
+            self.delete_button.config(state=tk.NORMAL)
+
+
     # --- Core Functionality Methods ---
     def populate_listbox(self):
         """Clears and refills the listbox based on the self.tasks list."""
-        current_selection = self.get_selected_task_index() # Preserve selection if possible
+        current_selection_index = self.get_selected_task_index() # Preserve selection
 
         self.task_listbox.delete(0, tk.END) # Clear existing items
         for index, task in enumerate(self.tasks):
-            status = "[X]" if task['completed'] else "[ ]"
-            display_text = f"{status} {task['description']}"
+            priority_text = f"({task.get('priority', 'None')})" if task.get('priority', 'None') != 'None' else ""
+            status_text = "[X]" if task['completed'] else "[ ]"
+            display_text = f"{status_text} {priority_text} {task['description']}".strip() # Strip extra spaces
+
             self.task_listbox.insert(tk.END, display_text)
 
-            # Apply styling for completed tasks
+            # Apply styling
             if task['completed']:
-                self.task_listbox.itemconfig(index, {'fg': self.completed_color, 'font': self.strikethrough_font})
+                # Completed tasks are gray and struck through, regardless of original priority
+                self.task_listbox.itemconfig(index, {'fg': COLOR_TEXT_COMPLETED})
+                self.task_listbox.itemconfig(index, {'font': self.strikethrough_font})
             else:
-                 self.task_listbox.itemconfig(index, {'fg': self.fg_color, 'font': self.default_font})
+                 # Not completed - apply priority color and default font
+                 color = COLOR_TEXT_DEFAULT
+                 if task.get('priority') == "High":
+                     color = COLOR_TEXT_HIGH_PRIORITY
+                 elif task.get('priority') == "Medium":
+                     color = COLOR_TEXT_MEDIUM_PRIORITY
+                 elif task.get('priority') == "Low":
+                      color = COLOR_TEXT_LOW_PRIORITY
+
+                 self.task_listbox.itemconfig(index, {'fg': color})
+                 self.task_listbox.itemconfig(index, {'font': self.default_font})
+
 
         # Re-select the previously selected item if it still exists
-        if current_selection is not None and current_selection < self.task_listbox.size():
-             self.task_listbox.selection_set(current_selection)
-             self.task_listbox.activate(current_selection) # Ensure it has focus outline
-             self.task_listbox.see(current_selection) # Ensure it's visible
+        if current_selection_index is not None and current_selection_index < self.task_listbox.size():
+             self.task_listbox.selection_set(current_selection_index)
+             self.task_listbox.activate(current_selection_index)
+             self.task_listbox.see(current_selection_index) # Ensure it's visible
 
         # Update action button states based on selection
         self.update_button_states()
 
 
     def add_task(self):
-        """Adds a task from the entry field to the list."""
+        """Adds a task from the entry field and priority combobox to the list."""
         task_description = self.task_entry.get().strip()
-        if task_description:
-            # Check for duplicates? Optional UX decision
-            # for task in self.tasks:
-            #     if task['description'] == task_description and not task['completed']:
-            #         messagebox.showinfo("Duplicate", "This task already exists.")
-            #         return
+        task_priority = self.priority_combobox.get()
 
-            new_task = {"description": task_description, "completed": False}
+        if task_description:
+            new_task = {
+                "description": task_description,
+                "completed": False,
+                "priority": task_priority
+            }
             self.tasks.append(new_task)
-            self.populate_listbox() # Update the display
-            self.task_listbox.selection_clear(0, tk.END) # Clear selection
-             # Select and scroll to the newly added task
-            new_index = tk.END
+            self.populate_listbox()
+            # Select and scroll to the newly added task
+            new_index = len(self.tasks) - 1
+            self.task_listbox.selection_clear(0, tk.END) # Clear previous selection
             self.task_listbox.selection_set(new_index)
             self.task_listbox.activate(new_index)
             self.task_listbox.see(new_index)
 
-            self.task_entry.delete(0, tk.END) # Clear the entry field
-            self.update_status(f"Task '{task_description}' added.")
+            self.task_entry.delete(0, tk.END) # Clear entry
+            self.priority_combobox.set(PRIORITY_OPTIONS[0]) # Reset priority combo
+            self.update_status(f"Task '{task_description}' ({task_priority}) added.")
         else:
             messagebox.showwarning("Input Error", "Task description cannot be empty.")
             self.update_status("Add task failed: Description empty.")
         self.task_entry.focus_set() # Keep focus on entry
+
 
     def add_task_event(self, event):
         """Callback for pressing Enter in the entry field."""
@@ -262,16 +316,57 @@ class TodoApp:
             self.populate_listbox() # Update the display (will preserve selection)
             self.update_status(f"Task {task_index + 1} {status_text}.")
         else:
-             # This case should ideally not happen with get_selected_task_index check
-             messagebox.showerror("Error", "Invalid task index selected.")
+             messagebox.showerror("Error", "Invalid task index selected.") # Should not happen
              self.update_status("Toggle failed: Invalid index.")
 
 
     def toggle_complete_event(self, event):
         """Callback for double-clicking a task."""
-        # Ensure double click was on an actual item, not empty space
+        # Ensure double click was on an actual item
         if self.task_listbox.curselection():
-            self.toggle_complete()
+             self.toggle_complete()
+
+    def edit_task(self):
+        """Opens a dialog to edit the description of the selected task."""
+        task_index = self.get_selected_task_index()
+        if task_index is None:
+            messagebox.showwarning("Selection Error", "Please select a task to edit.")
+            self.update_status("Edit failed: No task selected.")
+            return
+
+        current_task = self.tasks[task_index]
+
+        # Use a simpledialog for now, a custom Toplevel window would be better for editing priority too
+        # simpledialog is part of tkinter.simpledialog, already imported implicitly by messagebox
+        # It's not ideal for editing *both* description and priority easily
+        # Let's create a custom simple Toplevel for description editing only for now.
+        # If more fields needed editing, a more complex custom dialog would be required.
+
+        # Using simpledialog.askstring is the easiest way for just the description
+        from tkinter.simpledialog import askstring
+        new_description = askstring(
+            "Edit Task",
+            "Edit Task Description:",
+            initialvalue=current_task['description']
+        )
+
+        # askstring returns None if Cancel is pressed, or the new string
+        if new_description is not None:
+            new_description = new_description.strip()
+            if new_description:
+                # Check if description actually changed to avoid unnecessary update/save
+                if new_description != current_task['description']:
+                    self.tasks[task_index]['description'] = new_description
+                    self.populate_listbox()
+                    self.update_status(f"Task {task_index + 1} description updated.")
+                else:
+                    self.update_status("Edit cancelled (no change).")
+            else:
+                messagebox.showwarning("Input Error", "Task description cannot be empty.")
+                self.update_status("Edit failed: Description empty.")
+        else:
+            self.update_status("Edit cancelled.")
+
 
     def delete_task(self):
         """Deletes the selected task after confirmation."""
@@ -291,23 +386,13 @@ class TodoApp:
             if 0 <= task_index < len(self.tasks):
                 del self.tasks[task_index]
                 self.populate_listbox() # Update the display
-                # Selection is automatically cleared by populate_listbox in this case
+                # Selection is automatically cleared when the deleted item's index is removed
                 self.update_status(f"Task '{task_description}' deleted.")
             else:
-                 messagebox.showerror("Error", "Invalid task index selected during deletion.")
+                 messagebox.showerror("Error", "Invalid task index selected during deletion.") # Should not happen
                  self.update_status("Delete failed: Invalid index.")
         else:
             self.update_status("Deletion cancelled.")
-
-    def update_button_states(self):
-        """Enable/disable action buttons based on selection"""
-        if self.get_selected_task_index() is None:
-             self.toggle_button.config(state=tk.DISABLED)
-             self.delete_button.config(state=tk.DISABLED)
-        else:
-            self.toggle_button.config(state=tk.NORMAL)
-            self.delete_button.config(state=tk.NORMAL)
-
 
     def on_closing(self):
         """Handles window closing event, saves tasks."""
