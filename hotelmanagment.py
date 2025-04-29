@@ -106,7 +106,7 @@ class HotelApp(tk.Tk):
         view_menu.add_command(label="Rooms", command=lambda: self.show_frame("RoomManagementFrame"))
         view_menu.add_command(label="Guests", command=lambda: self.show_frame("GuestManagementFrame"))
         # Add separators for clarity
-        
+        view_menu.add_separator()
 
         # --- Actions Menu ---
         actions_menu = tk.Menu(menu_bar, tearoff=0)
