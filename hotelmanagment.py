@@ -87,7 +87,7 @@ class HotelApp(tk.Tk):
         status_bar.grid(row=2, column=0, sticky="ew") # Span across the bottom
 
         # Show the initial frame (Dashboard)
-       
+        self.show_frame("DashboardFrame")
 
     def create_menu(self):
         """Creates the main application menu bar."""
