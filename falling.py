@@ -3,7 +3,6 @@ import pygame
 import sys
 import random
 
-# --- Constants ---
 WIDTH, HEIGHT = 600, 800
 PLAYER_WIDTH, PLAYER_HEIGHT = 50, 50
 OBSTACLE_WIDTH, OBSTACLE_HEIGHT = 40, 40
