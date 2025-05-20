@@ -15,6 +15,11 @@ rooms_data = {
     "301": {"type": "Suite", "status": "Available", "price": 250},
 }
 
+next_room_number = 302  # Increment for new rooms
+# Sample booking data: Booking ID, Guest ID, Room Number, Check-in, Check-out
+# Sample booking data: Booking ID, Guest ID, Room Number, Check-in, Check-out
+# Sample booking data: Booking ID, Guest ID, Room Number, Check-in, Check-out
+
 # Sample guest data: Guest ID, Name, Contact
 guests_data = {
     1: {"name": "Alice Smith", "contact": "555-1234"},
