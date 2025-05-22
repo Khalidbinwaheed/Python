@@ -2,7 +2,8 @@
 import pygame
 import sys
 import random
-
+import time
+# --- Constants ---
 WIDTH, HEIGHT = 600, 800
 PLAYER_WIDTH, PLAYER_HEIGHT = 50, 50
 OBSTACLE_WIDTH, OBSTACLE_HEIGHT = 40, 40
@@ -11,6 +12,8 @@ OBSTACLE_SPEED_MIN = 3
 OBSTACLE_SPEED_MAX = 7
 OBSTACLE_SPAWN_RATE = 40 # Lower means more obstacles (frames between spawns)
 SPAWN_RATE_DECREASE = 0.1 # How much the spawn rate decreases over time
+
+# --- Colors ---
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
