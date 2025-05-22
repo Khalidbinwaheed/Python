@@ -281,7 +281,7 @@ def game_loop():
 
         # --- Drawing ---
         draw_background_and_walls() # Draw background and walls first
-        draw_snake(snake_list, direction) # Pass direction for eyes
+        draw_snake(snake_list, direction) # Pass direction for eyes``
         draw_food(food_pos)
         display_score(score)
 
