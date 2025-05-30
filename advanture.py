@@ -5,9 +5,6 @@ def simple_adventure():
     print("There are two passages: one LEFT and one RIGHT.")
 
     current_room = "cave"
-
-    
-
     while True:
         if current_room == "cave":
             choice = input("Which way do you go? (LEFT/RIGHT): ").upper()
