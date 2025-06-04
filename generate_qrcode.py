@@ -1,12 +1,10 @@
-!pip install qrcode
-
 import qrcode
-from IPython.display import display, Image
 
-def generate_qr_display(data):
+def generate_qr(data, filename="qrcode.png"):
     """
-    Generates a QR code from the provided data and displays it.
+    Generates a QR code from the provided data and saves it as an image file.
     :param data: The text or link to encode in the QR code.
+    :param filename: The filename for the saved QR code image.
     """
     qr = qrcode.QRCode(
         version=1,
@@ -18,19 +16,10 @@ def generate_qr_display(data):
     qr.make(fit=True)
 
     img = qr.make_image(fill_color="black", back_color="white")
-
-    # Convert the image to a format suitable for display
-    from io import BytesIO
-    buffer = BytesIO()
-    img.save(buffer, format='PNG')
-    buffer.seek(0)
-    image_bytes = buffer.read()
-
-    # Display the image
-    display(Image(image_bytes))
-    print("QR code displayed above.")
-
+    img.save(filename)
+    print(f"QR code saved as {filename}")
 
 if __name__ == "__main__":
     user_input = input("Enter the link or text to generate QR code: ")
-    generate_qr_display(user_input)
+    output_file = input("Enter output filename (default: qrcode.png): ").strip() or "qrcode.png"
+    generate_qr(user_input, output_file)
