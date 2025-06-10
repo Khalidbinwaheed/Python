@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Secret Garden</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Nunito+Sans:opsz,wght@6..12,300;6..12,400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Nunito Sans', sans-serif;
+            background-color: #3d403a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #garden-wall {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1500px;
+        }
+        #secret-garden-view {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: url('https://images.unsplash.com/photo-1524063221910-3ca13b9485b2?q=80&w=1974&auto=format&fit=crop') no-repeat center center;
+            background-size: cover;
+            filter: blur(3px);
+            opacity: 0.9;
+            z-index: 1;
+        }
+        .sun-rays {
+            position: absolute;
+            top: 0;
+            left: 25%;
+            width: 50%;
+            height: 100%;
+            background: radial-gradient(circle at 50% -20%, rgba(255,223,186,0.8), transparent 70%);
+            opacity: 0;
+            transition: opacity 1.5s ease-in 0.5s;
+            pointer-events: none;
+            z-index: 2;
+        }
+        #door-container {
+            position: relative;
+            width: 380px;
+            height: 600px;
+            transform-style: preserve-3d;
+            transition: transform 2s ease-in-out;
+            z-index: 3;
+        }
+        #door {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-origin: left center;
+            transition: transform 2s cubic-bezier(0.65, 0, 0.35, 1);
+            transform-style: preserve-3d;
+            background-color: #8a9a83;
+            border: 20px solid #556b2f;
+            box-sizing: border-box;
+            border-radius: 5px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 4;
+        }
+        #door.open {
+            transform: rotateY(-110deg);
+        }
+        #login-form-container {
+            padding: 40px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5em;
+            color: #f0e6d2;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+            margin-top: 50px;
+            margin-bottom: 60px;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 25px;
+            width: 100%;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 300;
+            font-size: 0.9em;
+            color: #d1e2c4;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 20px;
+            background-color: rgba(0,0,0,0.2);
+            color: #f0e6d2;
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 1em;
+            transition: box-shadow 0.3s ease, background-color 0.3s ease;
+            box-sizing: border-box;
+        }
+        input[type="text"]::placeholder, input[type="password"]::placeholder {
+            color: rgba(240, 230, 210, 0.5);
+            font-weight: 300;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            background-color: rgba(0,0,0,0.3);
+            box-shadow: 0 0 15px 3px rgba(135, 206, 235, 0.5);
+        }
+        #door-handle {
+            position: absolute;
+            right: -50px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 35px;
+            background: linear-gradient(145deg, #d4af37, #b8860b);
+            border: 2px solid #a1770a;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 0 0px 0px rgba(255, 191, 0, 0.7);
+            transition: box-shadow 0.3s ease;
+        }
+        #door-handle:hover {
+            animation: glow 1.5s infinite ease-in-out;
+        }
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px 2px rgba(255, 191, 0, 0.5); }
+            50% { box-shadow: 0 0 20px 8px rgba(255, 191, 0, 0.8); }
+            100% { box-shadow: 0 0 5px 2px rgba(255, 191, 0, 0.5); }
+        }
+        #error-message {
+            position: absolute;
+            bottom: 110px;
+            color: #ff8a8a;
+            opacity: 0;
+            font-size: 0.9em;
+            transition: opacity 0.5s ease;
+            text-align: center;
+            left: 0;
+            right: 0;
+        }
+        #error-message.show {
+            opacity: 1;
+        }
+        #door-handle.error {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-1px, -50%, 0) rotate(2deg); }
+          20%, 80% { transform: translate3d(2px, -50%, 0) rotate(-4deg); }
+          30%, 50%, 70% { transform: translate3d(-4px, -50%, 0) rotate(4deg); }
+          40%, 60% { transform: translate3d(4px, -50%, 0) rotate(-4deg); }
+          0%, 100% { transform: translateY(-50%); }
+        }
+    </style>
+</head>
+<body>
+    <div id="garden-wall">
+        <div id="secret-garden-view">
+            <div class="sun-rays"></div>
+        </div>
+        <div id="door-container">
+            <div id="door" class="door-face">
+                <div id="login-form-container">
+                    <h1 class="title">The Secret Garden</h1>
+                    <form id="login-form" autocomplete="off">
+                        <div class="input-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" placeholder="Enter your name">
+                        </div>
+                        <div class="input-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" placeholder="Whisper the secret word">
+                        </div>
+                        <p id="error-message">The key seems a bit stubborn. Please try again.</p>
+                        <button type="submit" id="door-handle" title="Open the door"></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const door = document.getElementById('door');
+        const form = document.getElementById('login-form');
+        const doorHandle = document.getElementById('door-handle');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('error-message');
+        const sunRays = document.querySelector('.sun-rays');
+
+        // --- Create Audio Elements for Sound Effects ---
+        const birdSong = new Audio('https://www.soundjay.com/nature/birds-01.mp3');
+        birdSong.loop = true;
+        birdSong.volume = 0;
+
+        const doorRattle = new Audio('https://www.soundjay.com/mechanical/sounds/key-wiggling-in-lock-01.mp3');
+
+        // Preload sounds
+        birdSong.preload = 'auto';
+        doorRattle.preload = 'auto';
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+            if (username === 'Alice' && password === 'wonderland') {
+                handleSuccess();
+            } else {
+                handleError();
+            }
+        });
+
+        function handleSuccess() {
+            form.style.transition = 'opacity 0.5s ease';
+            form.style.opacity = '0';
+            door.classList.add('open');
+            sunRays.style.opacity = '1';
+            birdSong.play();
+            let currentVolume = 0;
+            const fadeInInterval = setInterval(() => {
+                if (currentVolume < 0.5) {
+                    currentVolume += 0.05;
+                    birdSong.volume = currentVolume;
+                } else {
+                    clearInterval(fadeInInterval);
+                }
+            }, 100);
+        }
+
+        function handleError() {
+            if(doorHandle.classList.contains('error')) return;
+            doorRattle.currentTime = 0;
+            doorRattle.play();
+            doorHandle.classList.add('error');
+            errorMessage.classList.add('show');
+            setTimeout(() => {
+                doorHandle.classList.remove('error');
+            }, 500);
+            setTimeout(() => {
+               errorMessage.classList.remove('show');
+            }, 3000);
+        }
+    });
+    </script>
+</body>
+</html>
