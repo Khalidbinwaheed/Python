@@ -49,7 +49,12 @@ entry = tk.Entry(root, width=40, font=("Arial", 12))
 entry.pack(pady=5)
 
 tk.Button(root, text="Generate and Save QR Code", command=save_qr, font=("Arial", 12)).pack(pady=15)
+   
 
+
+
+
+   
 qr_label = tk.Label(root)
 qr_label.pack(pady=10)
 
