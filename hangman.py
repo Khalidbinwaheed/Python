@@ -43,7 +43,6 @@ HANGMAN_PICS = [
           |
     =========
     ''',
-    
     # Stage 3: 3 lives remaining
     '''
       +---+
