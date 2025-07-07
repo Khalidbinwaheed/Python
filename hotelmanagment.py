@@ -13,6 +13,7 @@ rooms_data = {
     "201": {"type": "Double", "status": "Available", "price": 120},
     "202": {"type": "Double", "status": "Cleaning", "price": 120},
     "301": {"type": "Suite", "status": "Available", "price": 250},
+    
 }
 
 next_room_number = 302  # Increment for new rooms
