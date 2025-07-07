@@ -16,6 +16,7 @@ def number_guessing_game():
             print("Invalid input. Please enter a number.")
             continue # Skip the rest of this loop iteration
 
+
         attempts += 1
 
         if guess < secret_number:
