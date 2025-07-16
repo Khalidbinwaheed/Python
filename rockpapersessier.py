@@ -18,6 +18,8 @@ def rock_paper_scissors():
             continue # Ask for input again
         
 
+        
+
         computer_choice = random.choice(options)
         print(f"\nYou chose: {user_choice}")
         print(f"Computer chose: {computer_choice}\n")
