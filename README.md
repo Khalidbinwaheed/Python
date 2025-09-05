@@ -1,4 +1,4 @@
 # Python
 For python practice
 
-clean code
+Clean
